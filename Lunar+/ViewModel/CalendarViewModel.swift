@@ -19,7 +19,7 @@ class CalendarViewModel: ObservableObject {
     @Published var isYearPickerPresented = false
     @Published var activeTab: Tab = .calendar
     @Published var isAddingEvent = false
-    @Published var events: [String: [Event]] = [:] // Key format: "yyyy-MM-dd"
+    @Published var events: [String: [Event]] = [:]
     
     private let calendar = Calendar.current
     private let lunarConverter = LunarConverter()
@@ -45,7 +45,7 @@ class CalendarViewModel: ObservableObject {
         return formatter.string(from: currentDate)
     }
     
-    var selectedDateLunarDetails: (day: String, month: String, zodiac: String) {
+    var selectedDateLunarDetails: (day: String, month: String, zodiac: String, special: String?) {
         return lunarConverter.getLunarDetails(for: selectedDate)
     }
     
@@ -75,7 +75,10 @@ class CalendarViewModel: ObservableObject {
                 let dayNum = totalDaysPrev - (startingWeekday - i) + 1
                 if let date = calendar.date(byAdding: .day, value: dayNum - 1, to: prevMonthDate) {
                     let lunar = lunarConverter.getLunarDetails(for: date)
-                    newDays.append(CalendarDate(date: date, dayNum: dayNum, isCurrentMonth: false, lunarDay: lunar.day, lunarMonth: lunar.month, zodiac: lunar.zodiac))
+                    newDays.append(CalendarDate(
+                        date: date, dayNum: dayNum, isCurrentMonth: false,
+                        lunarDay: lunar.day, lunarMonth: lunar.month, zodiac: lunar.zodiac, specialText: lunar.special
+                    ))
                 }
             }
         }
@@ -84,7 +87,10 @@ class CalendarViewModel: ObservableObject {
         for day in range {
             if let date = calendar.date(byAdding: .day, value: day - 1, to: firstDayOfMonth) {
                 let lunar = lunarConverter.getLunarDetails(for: date)
-                newDays.append(CalendarDate(date: date, dayNum: day, isCurrentMonth: true, lunarDay: lunar.day, lunarMonth: lunar.month, zodiac: lunar.zodiac))
+                newDays.append(CalendarDate(
+                    date: date, dayNum: day, isCurrentMonth: true,
+                    lunarDay: lunar.day, lunarMonth: lunar.month, zodiac: lunar.zodiac, specialText: lunar.special
+                ))
             }
         }
         
@@ -94,7 +100,10 @@ class CalendarViewModel: ObservableObject {
             for i in 1...remainingCells {
                 if let date = calendar.date(byAdding: .day, value: i - 1, to: nextMonthDate) {
                     let lunar = lunarConverter.getLunarDetails(for: date)
-                    newDays.append(CalendarDate(date: date, dayNum: i, isCurrentMonth: false, lunarDay: lunar.day, lunarMonth: lunar.month, zodiac: lunar.zodiac))
+                    newDays.append(CalendarDate(
+                        date: date, dayNum: i, isCurrentMonth: false,
+                        lunarDay: lunar.day, lunarMonth: lunar.month, zodiac: lunar.zodiac, specialText: lunar.special
+                    ))
                 }
             }
         }
@@ -110,7 +119,6 @@ class CalendarViewModel: ObservableObject {
     
     func selectDate(_ date: Date) {
         selectedDate = date
-        // Only update current view if month is different, otherwise just select
         if !calendar.isDate(date, equalTo: currentDate, toGranularity: .month) {
             currentDate = date
             generateDays()
@@ -135,7 +143,6 @@ class CalendarViewModel: ObservableObject {
         }
     }
     
-    // Event Management
     func addEvent(title: String) {
         let key = dateKey(for: selectedDate)
         let formatter = DateFormatter()
@@ -148,7 +155,6 @@ class CalendarViewModel: ObservableObject {
         saveEvents()
     }
     
-    // Updated: Delete a specific event object
     func deleteEvent(_ event: Event) {
         let key = dateKey(for: event.date)
         if var existing = events[key] {
@@ -156,15 +162,6 @@ class CalendarViewModel: ObservableObject {
             events[key] = existing
             saveEvents()
         }
-    }
-    
-    // Keep for backward compatibility if needed, or remove if unused
-    func deleteEvent(at offsets: IndexSet) {
-        let key = dateKey(for: selectedDate)
-        var existing = events[key] ?? []
-        existing.remove(atOffsets: offsets)
-        events[key] = existing
-        saveEvents()
     }
     
     private func saveEvents() {
