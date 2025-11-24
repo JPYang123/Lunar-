@@ -125,27 +125,20 @@ struct ListView: View {
                                     .foregroundColor(.gray.opacity(0.5))
                             } else {
                                 ForEach(events) { event in
-                                    Text(event.title)
-                                        .font(.body)
+                                    HStack {
+                                        Text(event.title)
+                                            .font(.body)
+                                        Spacer()
+                                        Button(action: { viewModel.deleteEvent(event) }) {
+                                            Image(systemName: "trash")
+                                                .font(.caption)
+                                                .foregroundColor(.red.opacity(0.6))
+                                        }
+                                        .buttonStyle(BorderlessButtonStyle())
+                                    }
                                 }
                             }
                         }
-                        
-                        Spacer()
-                        
-                        // Add Event Button for List Item
-                        Button(action: {
-                            viewModel.selectDate(date)
-                            viewModel.isAddingEvent = true
-                        }) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.red)
-                                .padding(8)
-                                .background(Color.red.opacity(0.1))
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(PlainButtonStyle()) // Needed to prevent whole row click
                     }
                     .padding(.vertical, 4)
                 }
@@ -272,14 +265,18 @@ struct DetailView: View {
         VStack(alignment: .leading, spacing: 15) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading) {
-                    Text(viewModel.selectedDate, format: .dateTime.weekday(.wide)).font(.caption).fontWeight(.bold).foregroundColor(.gray)
-                    Text(viewModel.selectedDate, format: .dateTime.day().month(.wide)).font(.title2).fontWeight(.bold)
+                    Text(viewModel.selectedDate, format: .dateTime.weekday(.wide))
+                        .font(.caption).fontWeight(.bold).foregroundColor(.gray)
+                    Text(viewModel.selectedDate, format: .dateTime.day().month(.wide))
+                        .font(.title2).fontWeight(.bold)
                 }
                 Spacer()
                 VStack(alignment: .trailing) {
                     Text("LUNAR").font(.caption).fontWeight(.bold).foregroundColor(.red)
-                    Text("\(viewModel.selectedDateLunarDetails.month)\(viewModel.selectedDateLunarDetails.day)").font(.title2).fontWeight(.bold).fontDesign(.serif)
-                    Text("Year of the \(viewModel.selectedDateLunarDetails.zodiac)").font(.caption).foregroundColor(.gray)
+                    Text("\(viewModel.selectedDateLunarDetails.month)\(viewModel.selectedDateLunarDetails.day)")
+                        .font(.title2).fontWeight(.bold).fontDesign(.serif)
+                    Text("Year of the \(viewModel.selectedDateLunarDetails.zodiac)")
+                        .font(.caption).foregroundColor(.gray)
                 }
             }
             
@@ -295,6 +292,13 @@ struct DetailView: View {
                             Text(event.timeString).font(.caption).foregroundColor(.gray)
                         }
                         Spacer()
+                        
+                        // Delete Button
+                        Button(action: { viewModel.deleteEvent(event) }) {
+                            Image(systemName: "trash")
+                                .foregroundColor(.gray.opacity(0.5))
+                                .padding(10)
+                        }
                     }
                     .padding()
                     .background(Color.white)
