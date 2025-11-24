@@ -5,11 +5,7 @@
 //  Created by Jiping Yang on 11/23/25.
 //
 
-import Foundation
 import SwiftUI
-
-// MARK: - MODEL LAYER
-// Pure data logic and Lunar conversion utilities.
 
 struct CalendarDate: Identifiable, Hashable {
     let id = UUID()
@@ -19,7 +15,7 @@ struct CalendarDate: Identifiable, Hashable {
     let lunarDay: String
     let lunarMonth: String
     let zodiac: String
-    // New: Special text (Festival or Solar Term)
+    // Special text (Festival or Solar Term)
     let specialText: String?
 }
 
@@ -31,7 +27,8 @@ struct Event: Identifiable, Codable, Hashable {
 }
 
 class LunarConverter {
-    private let chineseCalendar = Calendar(identifier: .chinese)
+    // Explicitly use Foundation.Calendar to avoid any ambiguity
+    private let chineseCalendar = Foundation.Calendar(identifier: .chinese)
     private let lunarMonths = ["正月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "冬月", "腊月"]
     private let chineseNumbers = ["〇", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
     private let zodiacs = ["鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊", "猴", "鸡", "狗", "猪"]
@@ -54,7 +51,7 @@ class LunarConverter {
     ]
     
     func getSolarTerm(for date: Date) -> String? {
-        let calendar = Calendar.current
+        let calendar = Foundation.Calendar.current
         let year = calendar.component(.year, from: date)
         let month = calendar.component(.month, from: date) - 1 // 0-based index for array
         let day = calendar.component(.day, from: date)
@@ -69,7 +66,7 @@ class LunarConverter {
             
             // Simplified formula: Int(Y * D + C) - L
             let y = Double(year % 100)
-            let l = Double(year / 4)
+            let _ = Double(year / 4) // Unused variable replaced with _
             // Note: This integer division logic varies by century, but is a decent approximation
             // For swift, let's keep it simple:
             var calculatedDay = Int(y * 0.2422 + term.c) - Int(y/4)
@@ -87,10 +84,12 @@ class LunarConverter {
         let components = chineseCalendar.dateComponents([.year, .month, .day], from: date)
         guard let year = components.year, let month = components.month, let day = components.day else { return ("", "", "", nil) }
         
-        // Zodiac
-        let zodiacIndex = (year - 1900) % 12
-        let normalizedIndex = zodiacIndex < 0 ? zodiacIndex + 12 : zodiacIndex
-        let zodiacName = zodiacs[normalizedIndex]
+        // Zodiac Fix:
+        // In iOS Chinese Calendar, .year returns the cyclic year (1-60).
+        // Year 1 (Jia-Zi) is Rat. Year 42 (Yi-Si, 2025) is Snake.
+        // We use (year - 1) % 12 to get the correct index.
+        let zodiacIndex = (year - 1) % 12
+        let zodiacName = zodiacs[zodiacIndex]
         
         let monthName = (month > 0 && month <= 12) ? lunarMonths[month - 1] : "闰月"
         

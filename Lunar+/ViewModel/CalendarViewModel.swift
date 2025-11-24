@@ -1,14 +1,14 @@
 //
 //  CalendarViewModel.swift
-//  Lunar+
+//  LunarV+
 //
 //  Created by Jiping Yang on 11/23/25.
 //
 
-import Foundation
 import SwiftUI
+import Foundation
 
-enum Tab {
+enum AppTab {
     case calendar, list, settings
 }
 
@@ -17,11 +17,16 @@ class CalendarViewModel: ObservableObject {
     @Published var selectedDate: Date
     @Published var daysGrid: [CalendarDate] = []
     @Published var isYearPickerPresented = false
-    @Published var activeTab: Tab = .calendar
+    @Published var activeTab: AppTab = .calendar // Updated Type
     @Published var isAddingEvent = false
     @Published var events: [String: [Event]] = [:]
     
-    private let calendar = Calendar.current
+    // Fortune State
+    @Published var isFortuneLoading = false
+    @Published var fortuneText = ""
+    @Published var isFortunePresented = false
+    
+    private let calendar = Foundation.Calendar.current
     private let lunarConverter = LunarConverter()
     private let eventsKey = "saved_events"
     
@@ -180,5 +185,27 @@ class CalendarViewModel: ObservableObject {
     func hasEvents(for date: Date) -> Bool {
         let key = dateKey(for: date)
         return !(events[key]?.isEmpty ?? true)
+    }
+    
+    // Generate Fortune
+    func generateFortune() {
+        guard !isFortuneLoading else { return }
+        isFortuneLoading = true
+        
+        let zodiac = selectedDateLunarDetails.zodiac
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        let dateStr = formatter.string(from: selectedDate)
+        
+        let prompt = "Write a short, mystical daily fortune for the \(zodiac) sign on \(dateStr). Mention lunar energy. Keep it under 2 sentences."
+        
+        Task {
+            let result = await callGemini(prompt: prompt)
+            DispatchQueue.main.async {
+                self.fortuneText = result
+                self.isFortuneLoading = false
+                self.isFortunePresented = true
+            }
+        }
     }
 }

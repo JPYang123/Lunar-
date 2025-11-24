@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  Lunar+
+//  LunarV3
 //
 //  Created by Jiping Yang on 11/23/25.
 //
@@ -31,6 +31,13 @@ struct ContentView: View {
                     viewModel.setYear(year)
                 } onClose: { viewModel.isYearPickerPresented = false }
             }
+            
+            // Fortune Overlay
+            if viewModel.isFortunePresented {
+                FortuneView(text: viewModel.fortuneText) {
+                    viewModel.isFortunePresented = false
+                }
+            }
         }
         .sheet(isPresented: $viewModel.isAddingEvent) {
             AddEventView(viewModel: viewModel)
@@ -59,7 +66,7 @@ struct ListView: View {
     @ObservedObject var viewModel: CalendarViewModel
     let converter = LunarConverter()
     var upcomingDates: [Date] {
-        let calendar = Calendar.current
+        let calendar = Foundation.Calendar.current
         var dates: [Date] = []
         let today = Date()
         for i in 0..<30 {
@@ -127,7 +134,7 @@ struct SettingsView: View {
                     Toggle("Start Week on Sunday", isOn: $startOnSunday).tint(.red)
                 }
                 Section {
-                    HStack { Text("Version"); Spacer(); Text("2.1.0").foregroundColor(.gray) }
+                    HStack { Text("Version"); Spacer(); Text("2.1.1").foregroundColor(.gray) }
                 }
             }
             .navigationTitle("Settings")
@@ -170,7 +177,7 @@ struct CalendarGridView: View {
             LazyVGrid(columns: columns, spacing: 15) {
                 ForEach(viewModel.daysGrid) { day in
                     DayCell(day: day,
-                            isSelected: Calendar.current.isDate(day.date, inSameDayAs: viewModel.selectedDate),
+                            isSelected: Foundation.Calendar.current.isDate(day.date, inSameDayAs: viewModel.selectedDate),
                             hasEvent: viewModel.hasEvents(for: day.date))
                         .onTapGesture { withAnimation { viewModel.selectDate(day.date) } }
                 }
@@ -185,7 +192,7 @@ struct DayCell: View {
     let day: CalendarDate
     let isSelected: Bool
     let hasEvent: Bool
-    var isToday: Bool { Calendar.current.isDateInToday(day.date) }
+    var isToday: Bool { Foundation.Calendar.current.isDateInToday(day.date) }
     var body: some View {
         VStack(spacing: 2) {
             Text("\(day.dayNum)").font(.system(size: 18, weight: isToday || isSelected ? .bold : .medium))
@@ -228,10 +235,37 @@ struct DetailView: View {
                     // Show special text in detail view too
                     Text(viewModel.selectedDateLunarDetails.special ?? "\(viewModel.selectedDateLunarDetails.month)\(viewModel.selectedDateLunarDetails.day)")
                         .font(.title2).fontWeight(.bold).fontDesign(.serif)
-                    Text("Year of the \(viewModel.selectedDateLunarDetails.zodiac)").font(.caption).foregroundColor(.gray)
+                    Text("\(viewModel.selectedDateLunarDetails.zodiac)年").font(.caption).foregroundColor(.gray)
                 }
             }
+            
             Divider()
+            
+            // Fortune Button
+            Button(action: { viewModel.generateFortune() }) {
+                HStack {
+                    ZStack {
+                        Circle().fill(Color.white).frame(width: 32, height: 32)
+                        if viewModel.isFortuneLoading {
+                            ProgressView().tint(.purple)
+                        } else {
+                            Image(systemName: "sparkles").foregroundColor(.purple).font(.system(size: 16))
+                        }
+                    }
+                    VStack(alignment: .leading) {
+                        Text("Daily Fortune").font(.subheadline).fontWeight(.bold).foregroundColor(.purple)
+                        Text("Ask the Zodiac").font(.caption).foregroundColor(.purple.opacity(0.6))
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").foregroundColor(.purple.opacity(0.4)).font(.caption)
+                }
+                .padding(12)
+                .background(LinearGradient(colors: [Color.purple.opacity(0.05), Color.blue.opacity(0.05)], startPoint: .leading, endPoint: .trailing))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.purple.opacity(0.1), lineWidth: 1))
+                .cornerRadius(12)
+            }
+            .disabled(viewModel.isFortuneLoading)
+            
             if !viewModel.currentEvents.isEmpty {
                 ForEach(viewModel.currentEvents) { event in
                     HStack {
@@ -326,4 +360,63 @@ struct BottomBar: View {
         .padding(.top, 10).padding(.bottom, 30).background(Color(UIColor.systemBackground).opacity(0.95))
         .overlay(Rectangle().frame(height: 1).foregroundColor(Color(UIColor.separator)), alignment: .top)
     }
+}
+
+struct FortuneView: View {
+    let text: String
+    let onClose: () -> Void
+    
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.6)
+                .ignoresSafeArea()
+                .onTapGesture { onClose() }
+            
+            VStack(spacing: 20) {
+                ZStack {
+                    Circle()
+                        .fill(Color.purple.opacity(0.1))
+                        .frame(width: 80, height: 80)
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 40))
+                        .foregroundColor(.purple)
+                }
+                .padding(.top, 20)
+                
+                Text("Daily Insight")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Text(text)
+                    .font(.system(.body, design: .serif))
+                    .italic()
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal)
+                    .lineSpacing(4)
+                
+                Button(action: onClose) {
+                    Text("Close")
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.primary)
+                        .foregroundColor(Color(UIColor.systemBackground))
+                        .cornerRadius(12)
+                }
+                .padding(.top, 10)
+            }
+            .padding(24)
+            .background(Color(UIColor.systemBackground))
+            .cornerRadius(24)
+            .shadow(radius: 20)
+            .padding(30)
+            .transition(.scale.combined(with: .opacity))
+        }
+        .zIndex(100)
+    }
+}
+
+#Preview {
+    ContentView()
 }
