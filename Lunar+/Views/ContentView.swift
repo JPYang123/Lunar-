@@ -121,11 +121,22 @@ struct ListView: View {
 }
 
 struct SettingsView: View {
+    @AppStorage("gemini_api_key") private var apiKey = ""
     @State private var lunarEnabled = true
     @State private var startOnSunday = true
+    
     var body: some View {
         NavigationView {
             Form {
+                Section(header: Text("AI Configuration")) {
+                    SecureField("Enter Gemini API Key", text: $apiKey)
+                    if apiKey.isEmpty {
+                        Text("Required for Fortune & Magic Events").font(.caption).foregroundColor(.red)
+                    }
+                    Link("Get API Key", destination: URL(string: "https://aistudio.google.com/app/apikey")!)
+                        .font(.caption)
+                }
+                
                 Section(header: Text("Calendars")) {
                     HStack { Text("Gregorian"); Spacer(); Image(systemName: "checkmark").foregroundColor(.red) }
                     Toggle("Chinese Lunar", isOn: $lunarEnabled).tint(.red)

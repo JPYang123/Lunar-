@@ -8,7 +8,7 @@ import SwiftUI
 // import Foundation // Explicit import to ensure Calendar refers to Foundation.Calendar where needed
 
 // MARK: - GEMINI API UTILITIES
-let apiKey = "AIzaSyDcr-U0TBYBmsoLBGq7H78G6ZrQ-7DzHAE"
+let apiKey = ""
 
 struct GeminiResponse: Codable {
     struct Candidate: Codable {
